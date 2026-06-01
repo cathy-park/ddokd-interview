@@ -345,6 +345,27 @@ export default function Home() {
           );
           const nextStep = 7;
           setState((prev) => ({ ...prev, step: nextStep, confirmed: { ...prev.confirmed, designLevel } }));
+
+          // 1차 간편 견적 알림 이메일 발송
+          const sendBasicQuote = async () => {
+            const formData = new FormData();
+            formData.append("type", state.confirmed.type);
+            formData.append("pages", state.confirmed.pages.map((p) => `${p.name}(${p.count})`).join(", "));
+            formData.append("boards", state.confirmed.boards.join(", "));
+            formData.append("features", state.confirmed.features.join(", "));
+            formData.append("sections", res.totalSections.toString());
+            formData.append("totalPrice", res.basePrice.toString());
+            formData.append("priceRange", `${res.minPrice.toLocaleString()} ~ ${res.maxPrice.toLocaleString()}`);
+            formData.append("dataReadiness", state.confirmed.dataReadiness);
+            formData.append("designLevel", designLevel);
+            try {
+              await fetch("/api/submit-basic", { method: "POST", body: formData });
+            } catch (err) {
+              console.error("Basic quote email failed", err);
+            }
+          };
+          sendBasicQuote();
+
           addMessage({ role: "bot", content: "모든 분석이 완료되었습니다. 제작 전문가가 분석한 예상 견적서입니다." }, nextStep);
           await new Promise((r) => setTimeout(r, 600));
           addMessage({ role: "bot", content: "예상 제작비", type: "quote", data: res }, nextStep);
